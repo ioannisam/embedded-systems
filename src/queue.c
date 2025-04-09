@@ -1,18 +1,16 @@
 #include "queue.h"
-
 #include <stdlib.h>
-#include <stdio.h>
 
 void queueInit(queue* fifo) {
     fifo->empty = 1;
     fifo->full = 0;
     fifo->head = 0;
     fifo->tail = 0;
-    fifo->mut = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
+    fifo->mut = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t));
     pthread_mutex_init(fifo->mut, NULL);
-    fifo->notFull = (pthread_cond_t *) malloc(sizeof(pthread_cond_t));
+    fifo->notFull = (pthread_cond_t*)malloc(sizeof(pthread_cond_t));
     pthread_cond_init(fifo->notFull, NULL);
-    fifo->notEmpty = (pthread_cond_t *) malloc(sizeof(pthread_cond_t));
+    fifo->notEmpty = (pthread_cond_t*)malloc(sizeof(pthread_cond_t));
     pthread_cond_init(fifo->notEmpty, NULL);
 }
 
@@ -25,22 +23,18 @@ void queueDelete(queue* fifo) {
     free(fifo->notEmpty);
 }
 
-void queueAdd(queue* fifo, int item) {
+void queueAdd(queue* fifo, workFunction* item) {
     fifo->buf[fifo->tail] = item;
-    fifo->tail++;
-    if (fifo->tail == QUEUESIZE)
-        fifo->tail = 0;
+    fifo->tail = (fifo->tail+1) % QUEUESIZE;
+    fifo->empty = 0;
     if (fifo->tail == fifo->head)
         fifo->full = 1;
-    fifo->empty = 0;
 }
 
-void queueDel(queue* fifo, int* item) {
+void queueDel(queue* fifo, workFunction** item) {
     *item = fifo->buf[fifo->head];
-    fifo->head++;
-    if (fifo->head == QUEUESIZE)
-        fifo->head = 0;
+    fifo->head = (fifo->head+1) % QUEUESIZE;
+    fifo->full = 0;
     if (fifo->head == fifo->tail)
         fifo->empty = 1;
-    fifo->full = 0;
 }

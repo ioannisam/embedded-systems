@@ -1,41 +1,43 @@
 #include "queue.h"
-
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <sys/time.h>
+#include <math.h>
+
+void* compute_sine(void* arg) {
+    double *angle = (double *)arg;
+    printf("Sine(%f) = %f\n", *angle, sin(*angle));
+    return NULL;
+}
 
 void* consumer(void* q) {
-    queue* fifo;
-    int i, d;
-    
-    fifo = (queue*)q;
-    
-    // First loop with 200ms delay
-    for (i=0; i<LOOP; i++) {
+    queue* fifo = (queue*)q;
+    while (1) {
         pthread_mutex_lock(fifo->mut);
         while (fifo->empty) {
-            printf("consumer: queue EMPTY.\n");
             pthread_cond_wait(fifo->notEmpty, fifo->mut);
         }
-        queueDel(fifo, &d);
+
+        workFunction* wf;
+        queueDel(fifo, &wf);
         pthread_mutex_unlock(fifo->mut);
         pthread_cond_signal(fifo->notFull);
-        printf("consumer: received %d.\n", d);
-        usleep(200000);
-    }
-    
-    // Second loop with 50ms delay
-    for (i=0; i<LOOP; i++) {
-        pthread_mutex_lock(fifo->mut);
-        while (fifo->empty) {
-            printf("consumer: queue EMPTY.\n");
-            pthread_cond_wait(fifo->notEmpty, fifo->mut);
+
+        // poison pill
+        if (wf->work == NULL) {
+            free(wf);
+            break;
         }
-        queueDel(fifo, &d);
-        pthread_mutex_unlock(fifo->mut);
-        pthread_cond_signal(fifo->notFull);
-        printf("consumer: received %d.\n", d);
-        usleep(50000);
+
+        struct timeval dequeue_time;
+        gettimeofday(&dequeue_time, NULL);
+        long long wait_time = (dequeue_time.tv_sec - wf->enqueue_time.tv_sec) * 1000000LL + 
+                             (dequeue_time.tv_usec - wf->enqueue_time.tv_usec);
+        printf("%lld\n", wait_time);
+
+        wf->work(wf->arg);
+        free(wf->arg);
+        free(wf);
     }
-    
     return NULL;
 }

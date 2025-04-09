@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -I./include -pthread
+CFLAGS = -Wall -I./include -pthread -lm
 
 SRC_DIR = src
 INC_DIR = include
@@ -21,7 +21,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJS)
-	$(CC) $(OBJS) -o $@ -pthread
+	$(CC) $(OBJS) -o $@ -pthread -lm
 
 clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR)
