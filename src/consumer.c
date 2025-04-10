@@ -5,12 +5,14 @@
 #include <math.h>
 
 void* compute_sine(void* arg) {
+    
     double *angle = (double *)arg;
-    printf("Sine(%f) = %f\n", *angle, sin(*angle));
+    fprintf(stderr, "Sine(%f) = %f\n", *angle, sin(*angle));
     return NULL;
 }
 
 void* consumer(void* q) {
+
     queue* fifo = (queue*)q;
     while (1) {
         pthread_mutex_lock(fifo->mut);
@@ -33,7 +35,7 @@ void* consumer(void* q) {
         gettimeofday(&dequeue_time, NULL);
         long long wait_time = (dequeue_time.tv_sec - wf->enqueue_time.tv_sec) * 1000000LL + 
                              (dequeue_time.tv_usec - wf->enqueue_time.tv_usec);
-        printf("%lld\n", wait_time);
+        fprintf(stdout, "%lld\n", wait_time);
 
         wf->work(wf->arg);
         free(wf->arg);

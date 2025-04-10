@@ -8,8 +8,10 @@
 void* compute_sine(void *arg);
 
 void* producer(void *q) {
+
     queue* fifo = (queue*)q;
     for (int i=0; i<PRODUCER_ITERATIONS; i++) {
+
         pthread_mutex_lock(fifo->mut);
         while (fifo->full) {
             pthread_cond_wait(fifo->notFull, fifo->mut);
@@ -26,5 +28,6 @@ void* producer(void *q) {
         pthread_mutex_unlock(fifo->mut);
         pthread_cond_signal(fifo->notEmpty);
     }
+    
     return NULL;
 }

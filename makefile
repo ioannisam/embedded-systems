@@ -5,6 +5,7 @@ SRC_DIR = src
 INC_DIR = include
 BUILD_DIR = build
 BIN_DIR = bin
+RESULT_DIR = test/results
 
 TARGET = $(BIN_DIR)/pc
 
@@ -16,6 +17,7 @@ all: directories $(TARGET)
 directories:
 	mkdir -p $(BUILD_DIR)
 	mkdir -p $(BIN_DIR)
+	mkdir -p $(RESULT_DIR)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -24,6 +26,6 @@ $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $@ -pthread -lm
 
 clean:
-	rm -rf $(BUILD_DIR) $(BIN_DIR)
+	rm -rf $(BUILD_DIR) $(BIN_DIR) $(RESULT_DIR)
 
 .PHONY: all clean directories
