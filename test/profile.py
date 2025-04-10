@@ -12,7 +12,7 @@ RESULTS_FILE = RESULTS_DIR / "results.txt"
 def compile():
     subprocess.run(["make"], cwd=PROJECT_ROOT, check=True)
 
-def experiment(producers, consumers, runs=5):
+def experiment(producers, consumers, runs=10):
 
     wait_times = []
     binary_path = PROJECT_ROOT / "bin" / "pc"
@@ -28,7 +28,7 @@ def experiment(producers, consumers, runs=5):
         wait_times.extend(times)
     return np.mean(wait_times) if wait_times else 0
 
-def test(max_producers=5, max_consumers=8):
+def test(max_producers=5, max_consumers=6):
 
     compile()
     
@@ -69,7 +69,7 @@ def test(max_producers=5, max_consumers=8):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Producer-Consumer Profiler')
-    parser.add_argument('-c', '--max-consumers', type=int, default=8,
+    parser.add_argument('-c', '--max-consumers', type=int, default=6,
                         help='Maximum number of consumers to test for each producer count')
     args = parser.parse_args()
     

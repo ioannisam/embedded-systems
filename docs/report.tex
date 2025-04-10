@@ -35,7 +35,7 @@ The implemented system uses a shared FIFO queue to coordinate work between produ
 \end{itemize}
 
 \section{Methodology}
-Each producer thread generated 100{,}000 tasks. Timestamps were recorded at the moment of task enqueueing using \texttt{gettimeofday()} and consumers measured the elapsed time upon dequeuing to determine each task’s residence time in the queue. For each producer count (1--5), the number of consumer threads was varied from 1 to 8. The results were averaged over five runs per configuration to minimize variability. Visualization was done using Python's \texttt{matplotlib}.
+Each producer thread generated 100{,}000 tasks. Timestamps were recorded at the moment of task enqueueing using \texttt{gettimeofday()} and consumers measured the elapsed time upon dequeuing to determine each task’s residence time in the queue. For each producer count (1--5), the number of consumer threads was varied from 1 to 6. The results were averaged over five runs per configuration to minimize variability. Visualization was done using Python's \texttt{matplotlib}.
 
 \section{Results and Discussion}
 
@@ -48,11 +48,11 @@ The experiments were conducted on an Arch Linux system with the following hardwa
 \end{itemize}
 
 \subsection{Waiting Time Trends}
-Figure~\ref{fig:results} shows the average task waiting time as the number of consumer threads increases for different producer counts. Overall, increasing consumer threads tends to reduce task waiting time, although the effect varies depending on producer load.
-
-For 1 producer (Figure~\ref{fig:prod1}), the average waiting time decreased from 39.01\,$\mu$s (1 consumer) to 28.46\,$\mu$s (8 consumers), indicating significant performance improvement with more consumers. The trend continues for higher producer counts. For instance:
+Figure~\ref{fig:results} shows the average task waiting time versus consumer threads across producer configurations. Key observations include:
 \begin{itemize}
-    \item With 2 producers, wait time decreased from 42.77\,$\mu$s to 42.30\,$\mu$s.
+    \item For 1 producer (Figure~\ref{fig:prod1}), wait time decreased from 46.97\,$\mu$s (1 consumer) to 41.87\,$\mu$s (6 consumers).
+    \item For 4 producers (Figure~\ref{fig:prod4}), the optimal configuration was 4 consumers (65.16\,$\mu$s), aligning with core count.
+    \item For 3 producers (Figure~\ref{fig:prod3}), performance degraded with additional consumers, favoring 1 thread (59.21\,$\mu$s).
 \end{itemize}
 
 \begin{figure}[ht]
@@ -84,17 +84,23 @@ For 1 producer (Figure~\ref{fig:prod1}), the average waiting time decreased from
         \caption{5 Producers}
         \label{fig:prod5}
     \end{subfigure}
-    \caption{Average task waiting time versus number of consumer threads across producer configurations.}
+    \caption{Average task waiting time versus consumer threads.}
     \label{fig:results}
 \end{figure}
 
 \subsection{Explanation of Trends}
-The observed behavior can be attributed to three main factors:
-
+The observed behavior can be attributed to four main factors:
 \begin{enumerate}
-    \item \textbf{Trivial Task Complexity:} Each sine computation requires approximately 0.1\,$\mu$s—significantly less than typical thread scheduling overheads (1--10\,$\mu$s). This results in consumers remaining idle and immediately ready for tasks, minimizing queue delays.
-    \item \textbf{Queue Dynamics:} The queue has a limited capacity of 10 tasks. When full, producers block until a slot becomes available. Increasing the number of consumers helps drain the queue more rapidly, reducing both residence time and producer blocking.
-    \item \textbf{Efficient Thread Scheduling:} Although the N5030 lacks hyper-threading, its low context-switch latency and efficient scheduling allow lightweight consumer threads to execute concurrently with minimal overhead.
+    \item \textbf{Lightweight Task Complexity:} Each task executed 10 sine computations (~1\,$\mu$s total), which remained insufficient to offset synchronization overheads (~1--10\,$\mu$s). Consumers often idled, allowing more threads to reduce queue residency time.
+    
+    \item \textbf{Queue Contention:} The 10-task queue forced frequent producer blocking. Additional consumers reduced queue dwell time but increased mutex contention for 3+ producers.
+    
+    \item \textbf{Core Utilization:} For 4 producers, 4 consumers maximized parallel execution on the 4-core CPU. Oversubscription (6 consumers) introduced context-switching penalties.
+    
+    \item \textbf{Anomalous 3-Producer Case:} Thread contention outweighed parallelism benefits, favoring fewer consumers. Measurement variability during lengthy runs may also contribute.
 \end{enumerate}
+
+\subsection{Hardware Limitations}
+The Intel Pentium N5030 CPU lacks hyper-threading, limiting parallel execution to 4 threads. However, the Linux scheduler efficiently managed oversubscribed threads (e.g., 6 consumers), reducing context-switch penalties for lightweight tasks.
 
 \end{document}

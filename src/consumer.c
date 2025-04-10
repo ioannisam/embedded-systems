@@ -6,7 +6,11 @@
 
 void* compute_sine(void* arg) {
     
-    double *angle = (double *)arg;
+    double* angle = (double*)arg;
+    for (int i=0; i<10; i++) {
+        volatile double result = sin(*angle); // prevent optimization
+        (void)result; // suppress unused variable warning
+    }
     fprintf(stderr, "Sine(%f) = %f\n", *angle, sin(*angle));
     return NULL;
 }
