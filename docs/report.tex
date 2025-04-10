@@ -1,0 +1,100 @@
+\documentclass{article}
+
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{amsmath}
+
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\title{Producer-Consumer System Analysis}
+\author{Ioannis Michalainas}
+\date{April 2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This assignment investigates the performance of a multi-threaded producer-consumer system where \textit{p} producer threads generate computational tasks and \textit{q} consumer threads process them. The average task waiting time is measured to evaluate the impact of consumer count on performance and to identify optimal thread configurations.
+\end{abstract}
+
+\section{Introduction}
+The implemented system uses a shared FIFO queue to coordinate work between producer and consumer threads. Producers generate computational tasks involving sine evaluations of the form $\sin(0.1k\pi)$ for $k = 1,\ldots,10$, which are then processed by consumer threads. Key design elements include:
+\begin{itemize}
+    \item Bounded queue capacity: 10 tasks
+    \item Thread synchronization via mutexes and condition variables
+    \item Poison pill termination mechanism
+\end{itemize}
+
+\section{Methodology}
+Each producer thread generated 100{,}000 tasks. Timestamps were recorded at the moment of task enqueueing using \texttt{gettimeofday()} and consumers measured the elapsed time upon dequeuing to determine each task’s residence time in the queue. For each producer count (1--5), the number of consumer threads was varied from 1 to 8. The results were averaged over five runs per configuration to minimize variability. Visualization was done using Python's \texttt{matplotlib}.
+
+\section{Results and Discussion}
+
+\subsection{System Specifications}
+The experiments were conducted on an Arch Linux system with the following hardware and system specifications:
+\begin{itemize}
+    \item \textbf{Processor:} Intel(R) Pentium(R) Silver N5030 CPU [1.1\,GHz - 3.1\,GHz]
+    \item \textbf{Cores:} 4 physical cores (no hyper-threading)
+    \item \textbf{Memory:} 4\,GB RAM
+\end{itemize}
+
+\subsection{Waiting Time Trends}
+Figure~\ref{fig:results} shows the average task waiting time as the number of consumer threads increases for different producer counts. Overall, increasing consumer threads tends to reduce task waiting time, although the effect varies depending on producer load.
+
+For 1 producer (Figure~\ref{fig:prod1}), the average waiting time decreased from 39.01\,$\mu$s (1 consumer) to 28.46\,$\mu$s (8 consumers), indicating significant performance improvement with more consumers. The trend continues for higher producer counts. For instance:
+\begin{itemize}
+    \item With 2 producers, wait time decreased from 42.77\,$\mu$s to 42.30\,$\mu$s.
+\end{itemize}
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{p1.png}
+        \caption{1 Producer}
+        \label{fig:prod1}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{p2.png}
+        \caption{2 Producers}
+        \label{fig:prod2}
+    \end{subfigure}
+    \\
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{p3.png}
+        \caption{3 Producers}
+        \label{fig:prod3}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{p4.png}
+        \caption{4 Producers}
+        \label{fig:prod4}
+    \end{subfigure}
+    \\
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{p5.png}
+        \caption{5 Producers}
+        \label{fig:prod5}
+    \end{subfigure}
+    \caption{Average task waiting time versus number of consumer threads across producer configurations.}
+    \label{fig:results}
+\end{figure}
+
+\subsection{Explanation of Trends}
+The observed behavior can be attributed to three main factors:
+
+\begin{enumerate}
+    \item \textbf{Trivial Task Complexity:} Each sine computation requires approximately 0.1\,$\mu$s—significantly less than typical thread scheduling overheads (1--10\,$\mu$s). This results in consumers remaining idle and immediately ready for tasks, minimizing queue delays.
+    \item \textbf{Queue Dynamics:} The queue has a limited capacity of 10 tasks. When full, producers block until a slot becomes available. Increasing the number of consumers helps drain the queue more rapidly, reducing both residence time and producer blocking.
+    \item \textbf{Efficient Thread Scheduling:} Although the N5030 lacks hyper-threading, its low context-switch latency and efficient scheduling allow lightweight consumer threads to execute concurrently with minimal overhead.
+\end{enumerate}
+
+\end{document}
