@@ -36,3 +36,17 @@ To build use the included `makefile`.
     ```bash
     make rpi
     ```
+
+Verify CA Certificates Exist:
+```bash
+ls /etc/ssl/certs/ca-certificates.crt
+```
+If missing, install certificates:
+```bash
+sudo pacman -S ca-certificates
+```
+*(Use the package manager specific to your host system.)*
+
+## Appendix
+
+For more in depth information and results refer to [`docs/report.pdf`](docs/report.pdf) (TODO).

@@ -1,44 +1,20 @@
-#include <stdio.h>
-#include <pthread.h>
-#include <unistd.h>
+#include "ws_client.h"
+#include <stdlib.h>
 
-void* countNumbers(void* arg) {
+int main(void) {
 
-    int* limit = (int*)arg;
-    for (int i=1; i<=*limit; i++) {
-        printf("Thread 1: Counting %d\n", i);
-        usleep(500000); // 0.5 seconds
+    struct lws_context* context = ws_init_context();
+    if (!context) {
+        return EXIT_FAILURE;
     }
-    
-    printf("Thread 1: Counting complete\n");
-    return NULL;
-}
 
-void* printLetters(void* arg) {
-
-    int count = *(int*)arg;
-    for (int i=0; i<count; i++) {
-        printf("Thread 2: Printing %c\n", 'A' + i);
-        usleep(700000); // 0.7 seconds
+    if (!ws_connect(context)) {
+        lws_context_destroy(context);
+        return EXIT_FAILURE;
     }
+
+    ws_service_loop(context);
     
-    printf("Thread 2: Printing complete\n");
-    return NULL;
-}
-
-int main() {
-
-    printf("THREAD EXAMPLE\n");
-    pthread_t thread1, thread2;
-    int c1 = 5;
-    int c2 = 5;
-    
-    pthread_create(&thread1, NULL, countNumbers, &c1);
-    pthread_create(&thread2, NULL, printLetters, &c2);
-
-    pthread_join(thread1, NULL);
-    pthread_join(thread2, NULL);
-
-    printf("All threads completed successfully!\n");
-    return 0;
+    lws_context_destroy(context);
+    return EXIT_SUCCESS;
 }

@@ -1,29 +1,30 @@
 CC     = gcc
 CC_RPI = arm-linux-gnueabihf-gcc
 
-CFLAGS     = -Wall -O2 -pthread -lwebsockets -Iinclude
+CFLAGS     = -Wall -O2 -pthread -Iinclude
 CFLAGS_RPI = $(CFLAGS) -mcpu=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
+LDFLAGS    = -lwebsockets -lssl -lcrypto
 
-SRC = src/main.c
+SRC = src/main.c src/ws_client.c
 
-OBJ_NATIVE = $(patsubst src/%.c,build/arch/%.o,$(SRC))
-OBJ_RPI    = $(patsubst src/%.c,build/rpi/%.o,$(SRC))
-$(shell mkdir -p bin build/arch build/rpi)
+OBJ     = $(patsubst src/%.c,build/host/%.o,$(SRC))
+OBJ_RPI = $(patsubst src/%.c,build/rpi/%.o,$(SRC))
+$(shell mkdir -p bin build/host build/rpi logs)
 
 # native build
-all: $(OBJ_NATIVE)
-	$(CC) $(CFLAGS) -o bin/host $(OBJ_NATIVE)
+all: $(OBJ)
+	$(CC) $(CFLAGS) -o bin/host $(OBJ) $(LDFLAGS)
 
-build/arch/%.o: src/%.c
+build/host/%.o: src/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Raspberry Pi build
 rpi: $(OBJ_RPI)
-	$(CC_RPI) $(CFLAGS_RPI) -o bin/rpi $(OBJ_RPI)
+	$(CC_RPI) $(CFLAGS_RPI) -o bin/rpi $(OBJ_RPI) $(LDFLAGS)
 
 build/rpi/%.o: src/%.c
 	$(CC_RPI) $(CFLAGS_RPI) -c $< -o $@
 
 # extra rules
 clean:
-	rm -rf build bin
+	rm -rf build bin logs
