@@ -1,4 +1,3 @@
-// File: src/websocket.c
 #include "websocket.h"
 #include "common.h"
 #include "parser.h"
