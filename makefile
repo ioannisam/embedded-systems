@@ -3,9 +3,9 @@ CC_RPI = arm-linux-gnueabihf-gcc
 
 CFLAGS     = -Wall -O2 -pthread -Iinclude
 CFLAGS_RPI = $(CFLAGS) -mcpu=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
-LDFLAGS    = -lwebsockets -lssl -lcrypto
+LDFLAGS    = -lwebsockets -lssl -lcrypto -ljansson
 
-SRC = src/main.c src/ws_client.c
+SRC = src/main.c src/websocket.c src/queue.c src/parser.c src/logger.c
 
 OBJ     = $(patsubst src/%.c,build/host/%.o,$(SRC))
 OBJ_RPI = $(patsubst src/%.c,build/rpi/%.o,$(SRC))
