@@ -30,7 +30,10 @@ int main() {
             .trades = NULL,
             .count = 0,
             .capacity = 0,
-            .mutex = PTHREAD_MUTEX_INITIALIZER
+            .mutex = PTHREAD_MUTEX_INITIALIZER,
+            .ma_index = 0,
+            .ma_history = {0},
+            .ma_timestamps = {0}
         };
     }
 

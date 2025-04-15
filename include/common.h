@@ -14,6 +14,7 @@
 #define OKX_WS_PATH "/ws/v5/public"
 #define QUEUE_SIZE 1024
 #define MA_WINDOW 900  // 15 minutes in seconds
+#define MA_HISTORY_SIZE 8
 
 typedef struct {
     char symbol[16];
@@ -27,6 +28,12 @@ typedef struct {
     size_t count;
     size_t capacity;
     pthread_mutex_t mutex;
+
+    // last 8 MA values
+    double ma_history[8];
+    time_t ma_timestamps[8];   
+    int ma_index;
+    int ma_count;
 } SymbolHistory;
 
 struct TradeQueue;

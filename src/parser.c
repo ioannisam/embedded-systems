@@ -32,7 +32,6 @@ void parse_and_queue(const char* json_str, size_t len, TradeQueue* queue) {
                         if(strcmp(tdata.symbol, symbols[i]) == 0) {
                             pthread_mutex_lock(&symbol_histories[i].mutex);
                             
-                            // resize array if needed
                             if(symbol_histories[i].count >= symbol_histories[i].capacity) {
                                 symbol_histories[i].capacity = symbol_histories[i].capacity ? 
                                     symbol_histories[i].capacity * 2 : 128;
