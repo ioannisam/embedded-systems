@@ -133,7 +133,7 @@ void* ma_thread(void* arg) {
 
             // log correlation
             char corr_filename[128];
-            snprintf(corr_filename, sizeof(corr_filename), "logs/correlation/%s.log", symbols[i]);
+            snprintf(corr_filename, sizeof(corr_filename), "logs/corr/%s.log", symbols[i]);
             FILE* cf = fopen(corr_filename, "a");
             if(cf) {
                 if (max_corr == -2.0) {
