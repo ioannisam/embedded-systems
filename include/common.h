@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define CPU_LOG_PATH "logs/cpu.log"
+#define CPU_MONITOR_INTERVAL 1 // seconds
 #define SYMBOL_COUNT 8
 #define OKX_WS_HOST "ws.okx.com"
 #define OKX_WS_PORT 8443

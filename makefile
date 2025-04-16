@@ -6,11 +6,11 @@ CFLAGS_RPI = $(CFLAGS) -mcpu=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard
 LDFLAGS    = -lwebsockets -lssl -lcrypto -ljansson -lm 
 LDFLAGS_RPI = -static -lwebsockets -lssl -lcrypto -ljansson -lm -L$(HOME)/rpi-sysroot/usr/lib/arm-linux-gnueabihf
 
-SRC = src/main.c src/websocket.c src/queue.c src/parser.c src/logger.c src/ma.c
+SRC = src/main.c src/websocket.c src/queue.c src/parser.c src/logger.c src/ma.c src/cpu_monitor.c
 
 OBJ     = $(patsubst src/%.c,build/host/%.o,$(SRC))
 OBJ_RPI = $(patsubst src/%.c,build/rpi/%.o,$(SRC))
-$(shell mkdir -p bin build/host build/rpi logs/raw logs/ma logs/corr)
+$(shell mkdir -p bin build/host build/rpi logs/raw logs/ma logs/corr logs/timing test/assets)
 
 # native build
 all: $(OBJ)
@@ -28,4 +28,4 @@ build/rpi/%.o: src/%.c
 
 # extra rules
 clean:
-	rm -rf build bin logs
+	rm -rf build bin logs test/assets

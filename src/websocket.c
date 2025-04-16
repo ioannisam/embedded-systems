@@ -67,8 +67,33 @@ struct lws* ws_connect(struct lws_context* context) {
 }
 
 int ws_service_loop(struct lws_context* context) {
-    while (!interrupted) {
-        lws_service(context, 1000);
+    
+    struct lws* wsi = NULL;
+    time_t last_connect_attempt = 0;
+    const int reconnect_interval = 5; // seconds
+    
+    while(1) {
+
+        if(!wsi && (time(NULL) - last_connect_attempt > reconnect_interval)) {
+            wsi = ws_connect(context);
+            last_connect_attempt = time(NULL);
+            if(!wsi) {
+                fprintf(stderr, "[%lu] Connection failed, retrying in %ds\n", 
+                    last_connect_attempt, reconnect_interval);
+            }
+        }
+        
+        if(wsi) {
+            lws_service(context, 1000);
+        } else {
+            sleep(1);
+        }
+        
+        if(interrupted) {
+            fprintf(stderr, "[%lu] Connection lost, reconnecting...\n", time(NULL));
+            interrupted = 0;
+            wsi = NULL;
+        }
     }
     return 0;
 }

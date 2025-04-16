@@ -25,7 +25,7 @@ void parse_and_queue(const char* json_str, size_t len, TradeQueue* queue) {
                     tdata.symbol[sizeof(tdata.symbol) - 1] = '\0';
                     tdata.price = atof(px);
                     tdata.volume = atof(sz);
-                    tdata.timestamp = strtoull(ts, NULL, 10);
+                    tdata.timestamp = strtoull(ts, NULL, 10) / 1000;
                     queue_push(queue, &tdata);
                     
                     for(int i=0; i<SYMBOL_COUNT; i++) {
