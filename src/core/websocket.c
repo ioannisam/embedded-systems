@@ -1,8 +1,6 @@
-#include "websocket.h"
-#include "common.h"
-#include "parser.h"
-
-#include <string.h>
+#include "core/websocket.h"
+#include "core/common.h"
+#include "system/parser.h"
 
 static int interrupted = 0;
 

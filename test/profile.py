@@ -7,7 +7,7 @@ import seaborn as sns
 from datetime import datetime
 
 def timing_deviation():
-    log_path = "logs/timing/timing.csv"
+    log_path = "logs/timing.csv"
     if not os.path.exists(log_path):
         print("Timing data not found!")
         return
@@ -142,7 +142,7 @@ def analyze_cpu_idle():
     
     # Resample to minute averages
     df.set_index("datetime", inplace=True)
-    idle_pct = df["idle_pct"].resample('1T').mean()
+    idle_pct = df["idle_pct"].resample('1min').mean()
     
     # Plot
     plt.figure(figsize=(12, 6))

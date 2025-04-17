@@ -1,9 +1,6 @@
-#include "logger.h"
-#include "common.h"
-#include "queue.h"
-
-#include <stdio.h>
-#include <time.h>
+#include "data/logger.h"
+#include "core/common.h"
+#include "core/queue.h"
 
 void* logger_thread(void* arg) {
 

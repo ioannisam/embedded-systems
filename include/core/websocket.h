@@ -1,6 +1,6 @@
 #pragma once
+
 #include <libwebsockets.h>
-#include <stddef.h>
 
 struct lws_context* ws_init_context();
 struct lws* ws_connect(struct lws_context* context);

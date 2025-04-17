@@ -1,12 +1,8 @@
-#include "common.h"
-#include "websocket.h"
-#include "logger.h"
-#include "queue.h"
-#include "ma.h"
-#include "cpu_monitor.h"
-
-#include <stdlib.h>
-#include <pthread.h>
+#include "core/common.h"
+#include "core/websocket.h"
+#include "core/queue.h"
+#include "data/logger.h"
+#include "system/scheduler.h"
 
 const char* symbols[SYMBOL_COUNT] = {
     "BTC-USDT", "ADA-USDT", "ETH-USDT", "DOGE-USDT",
@@ -38,19 +34,17 @@ int main() {
         };
     }
 
-    pthread_t logger, ma, cpu_monitor;
+    pthread_t logger, scheduler;
     pthread_create(&logger, NULL, logger_thread, &trade_queue);
-    pthread_create(&ma, NULL, ma_thread, NULL);
-    pthread_create(&cpu_monitor, NULL, cpu_monitor_thread, NULL);
+    pthread_create(&scheduler, NULL, scheduler_thread, NULL);
 
     ws_service_loop(context);
     
     lws_context_destroy(context);
     pthread_join(logger, NULL);
-    pthread_join(ma, NULL);
-    pthread_join(cpu_monitor, NULL);
+    pthread_join(scheduler, NULL);
     
-    // Cleanup histories
+    // cleanup histories
     for(int i=0; i<SYMBOL_COUNT; i++) {
         free(symbol_histories[i].trades);
     }

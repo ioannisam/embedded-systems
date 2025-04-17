@@ -1,12 +1,12 @@
-#include "parser.h"
-#include "common.h"
+#include "system/parser.h"
+#include "core/common.h"
 
 SymbolHistory symbol_histories[SYMBOL_COUNT] = {0};
 
 void parse_and_queue(const char* json_str, size_t len, TradeQueue* queue) {
+    
     json_error_t error;
     json_t* root = json_loadb(json_str, len, 0, &error);
-    
     if(root && json_is_object(root)) {
         json_t* data = json_object_get(root, "data");
         if(json_is_array(data)) {
