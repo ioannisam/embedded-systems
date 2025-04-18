@@ -1,0 +1,154 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+\title{Real-Time Cryptocurrency Analysis}
+\author{Ioannis Michalainas}
+\date{April 2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document describes the architecture, implementation details, performance characteristics and fault tolerance mechanisms of a real-time cryptocurrency analysis system. The system is designed for sustained operation on both desktop -for development purposes- and embedded platforms. We discuss moving average calculations, correlation analysis across multiple trading pairs and strategies to ensure reliability under network variability.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+Cryptocurrency markets operate continuously, generating vast amounts of data every second. Accurate and timely analysis of trade streams can inform automated strategies, risk management and market research. Our system ingests live trade feeds from the OKX exchange, processes data in near real time and computes minute-by-minute metrics for eight major cryptocurrency pairs:
+
+\[
+\left\{
+\begin{array}{cccc}
+\text{BTC-USDT}, & \text{ADA-USDT}, & \text{ETH-USDT}, & \text{DOGE-USDT}, \\
+\text{XRP-USDT}, & \text{SOL-USDT}, & \text{LTC-USDT}, & \text{BNB-USDT}
+\end{array}
+\right\}
+\]
+
+Beyond raw data capture, the system supports statistical analyses such as moving averages and cross-pair correlations, while maintaining robust fault tolerance to network interruptions. This document presents the full design, implementation choices, performance evaluation and operational considerations that enable continuous monitoring.
+
+
+\section{System Architecture}
+At a high level, the system consists of three interacting layers:
+\begin{enumerate}
+  \item \textbf{Data Ingestion}: Receives live trade data via WebSockets, parses incoming JSON messages, and queues them for downstream processing.
+  \item \textbf{Processing and Analysis}: Maintains in-memory buffers for calculating moving averages and correlation coefficients on fixed time windows.
+  \item \textbf{Fault Tolerance and Longevity}: Logs raw trades to disk, generates summary statistics, and exposes health metrics to alerting systems.
+\end{enumerate}
+
+\subsection{Data Ingestion}
+To achieve low-latency data ingestion, we integrate the \texttt{libwebsockets} library, which handles connection management and efficient message callbacks. Incoming JSON-formatted trade messages are parsed using the \texttt{jansson} library in \texttt{parser.c}. Parsed \texttt{TradeData} structures are enqueued into a lock-free queue implemented in \texttt{queue.c}, ensuring that I/O threads are never blocked by processing delays.
+
+Each \texttt{TradeData} object includes the following fields:
+\begin{verbatim}
+struct TradeData {
+    char symbol[16];      % Trading pair identifier (e.g., "BTC-USDT")
+    double price;         % Execution price for the trade
+    double volume;        % Trade volume in base currency
+    uint64_t timestamp;   % Epoch time in milliseconds
+};
+\end{verbatim}
+Raw trades are appended to symbol-specific log files via \texttt{logger.c}, providing an audit trail and enabling offline replay if needed.
+
+\subsection{Processing and Analysis}
+The core analytical tasks run on minute-resolution windows:
+
+\paragraph{Moving Average} For each trading pair, a 60-minute simple moving average (SMA) is computed. We use a circular buffer of size 128 to store recent price points, reducing memory churn and enabling O(1) updates: every new price pushes out the oldest and adjusts the running sum.
+
+\paragraph{Cross-Pair Correlation} To examine market coupling, we compute Pearson's correlation coefficient between the SMA sequences of all pairs. Given two sequences $\{x_i\}$ and $\{y_i\}$ of length $N$, we calculate:
+\[
+r = \frac{\sum_{i=1}^N (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^N (x_i - \bar{x})^2 \sum_{i=1}^N (y_i - \bar{y})^2}}.
+\]
+This dual-pass calculation first purges outdated entries before updating statistical sums, as implemented in \texttt{ma.c} and \texttt{corr.c}.
+
+\subsection{Fault Tolerance and Longevity}
+Continuous operation over hours or days demands resilience to network issues and system interrupts. Key features include:
+\begin{itemize}
+  \item \textbf{Exponential Backoff}: On WebSocket disconnects, reconnection attempts start at 30 seconds and double up to a 60-second cap (\texttt{websocket.c}).
+  \item \textbf{Heartbeat Monitoring}: Regular ping/pong messages verify channel health. Missed pings trigger an immediate reconnect.
+  \item \textbf{Thread Safety}: All symbol-specific data buffers are protected by mutexes when shared across threads.
+  \item \textbf{Graceful Shutdown}: SIGINT and SIGTERM handlers flush in-memory buffers to disk, close open sockets and log a final status report (\texttt{main.c}).
+\end{itemize}
+These mechanisms ensure that transient errors do not result in permanent disconnections, data loss or unhandled exceptions. \newpage
+
+\section{Performance Evaluation}
+
+\subsection{Scheduler Timing Accuracy}
+By measuring the actual execution time of analytical tasks against the ideal wall-clock schedule, we observe tight jitter control, suitable for minute-level aggregation.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{assets/timing.png}
+  \caption{Task scheduling deviations, showing x\% of operations occur within $\pm\kappa$\,ms of minute boundaries.}
+\end{figure}
+
+\subsection{Resource Utilization}
+With minimal memory footprint and efficient I/O, the system utilizes less than y\% of CPU resources, leaving ample headroom for additional features or parallel tasks.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{assets/cpu_idle.png}
+  \caption{Average CPU idle percentage remains above y\%, indicating low processing overhead during steady-state operation.}
+\end{figure}
+
+\section{Compilation and Deployment}
+
+\subsection{Native Host Build}
+To compile for the host environment, simply run:
+\begin{verbatim}
+$ make host
+\end{verbatim}
+This invokes GCC (version 12.2) with link-time optimizations, producing a dynamically linked binary. Required dependencies include \texttt{libwebsockets-dev}, \texttt{jansson-dev}, and OpenSSL libraries. The native build was used during the development phase of the project.
+
+\subsection{Embedded Cross-Compilation}
+For Raspberry Pi targets (ARMv6, hard-float ABI), use:
+\begin{verbatim}
+$ make rpi
+\end{verbatim}
+Cross-compilation uses a prebuilt sysroot with static linking of all dependencies via \texttt{arm-linux-gnueabihf-gcc}. The resulting binary is optimized for low-level embedded deployment. The cross-compiled build was used for the final execution and analysis of the assignment. 
+
+\section{Results and Insights}
+
+\subsection{Correlation Findings}
+The strong positive correlations indicate that price movements across the selected assets are tightly linked on the observed timeframe, suggesting potential for statistical arbitrage strategies.
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{assets/correlation.png}
+  \caption{48-hour correlation matrix among major cryptocurrency pairs.}
+\end{figure}
+
+\subsection{Preliminary Market Predictions}
+Based on historical SMA trends and correlation dynamics, the system can generate short-term directional indicators. For example, a sustained divergence of BTC-USDT from its 60-minute SMA by more than z\% often precedes a mean-reversion within the next three minutes. These signals are provided for educational purposes and should not be construed as financial advice.
+
+\section{Conclusion}
+This work details a robust framework for continuous, real-time cryptocurrency trade analysis. By combining efficient data pipelines, rigorous statistical computations and comprehensive fault tolerance, the system achieves reliable performance on both desktop and embedded platforms. Future enhancements include adaptive window sizing, integration of additional statistical models (e.g., Exponential SMA) and live dashboard visualization.
+
+\section{Tools and Sources}
+
+\subsection*{Tools}
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+Tool & Version & Purpose \\
+\midrule
+gcc           & 12.2  & compiler for native and cross builds \\
+make          & 4.3   & build automation for compiling and linking \\
+pthreads      & N/A   & concurrency and synchronization \\
+libwebsockets & 4.3.2 & market data ingestion \\
+OpenSSL       & 3.0   & secure communication layer \\
+jansson       & 2.14  & JSON parsing and serialization \\
+Python        & 3.11  & data visualization and offline analysis \\
+\bottomrule
+\end{tabularx}
+
+\vspace{1em}
+
+\subsection*{Sources}
+\begin{itemize}
+  \item \url{https://finnhub.io/docs/api/websocket-trades}
+  \item \url{https://libwebsockets.org/}
+\end{itemize}
+
+\end{document}

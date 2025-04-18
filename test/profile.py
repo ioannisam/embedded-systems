@@ -86,7 +86,7 @@ def correlation_heatmap():
 
     # average correlation (excluding diagonal)
     avg_corr = np.nanmean(corr_matrix.values.diagonal())
-    avg_corr = np.nanmean(corr_matrix.values)  # More accurate: exclude diagonal
+    avg_corr = np.nanmean(corr_matrix.values)
     avg_corr = f"{avg_corr:.2f}"
 
     # mask diagonal
@@ -117,7 +117,7 @@ def correlation_heatmap():
     
     # average correlation legend
     ax.text(
-        0.84, 0.02,  # Bottom-right corner (x=84%, y=2%)
+        0.84, 0.02,  # bottom-right corner (x=84%, y=2%)
         f"Avg Correlation: {avg_corr}",
         transform=ax.transAxes,
         fontsize=12,
@@ -132,19 +132,16 @@ def correlation_heatmap():
 def analyze_cpu_idle():
     df = pd.read_csv(
         "logs/cpu.log",
-        sep=r'\s+',          # Split on whitespace
-        header=None,         # No header
+        sep=r'\s+',
+        header=None,
         names=["timestamp", "idle_pct"]
     )
     
-    # Convert timestamp to datetime
     df["datetime"] = pd.to_datetime(df["timestamp"], unit='s')
     
-    # Resample to minute averages
     df.set_index("datetime", inplace=True)
     idle_pct = df["idle_pct"].resample('1min').mean()
     
-    # Plot
     plt.figure(figsize=(12, 6))
     idle_pct.plot(label="CPU Idle %")
     plt.title("CPU Utilization Over Time")

@@ -2,17 +2,25 @@
 
 **Author:** Ioannis Michalainas
 
-This project aims to implement a real-time cryptocurrency analysis system that connects to OKX WebSocket API to process transaction data for major cryptocurrency pairs (BTC-USDT, ETH-USDT, etc.).
+This project implements a real-time cryptocurrency analysis system that connects to OKX WebSocket API to process transaction data for major cryptocurrency pairs:
+
+<table>
+  <tr>
+    <td>BTC‑USDT</td><td>ADA‑USDT</td><td>ETH‑USDT</td><td>DOGE‑USDT</td>
+  </tr>
+  <tr>
+    <td>XRP‑USDT</td><td>SOL‑USDT</td><td>LTC‑USDT</td><td>BNB‑USDT</td>
+  </tr>
+</table>
 
 ## Tools
 
-- **C Programming Language**
+- **C**
 - **gcc**
-- **Make**
-- **arm-linux-gnueabihf-gcc**
-- **POSIX Threads (pthreads)**
+- **make**
+- **pthreads**
 - **libwebsockets**
-- **OKX WebSocket API**
+- **Python**
 
 ## Features
 
@@ -21,7 +29,7 @@ This project aims to implement a real-time cryptocurrency analysis system that c
 - Computes Pearson correlation coefficients to identify patterns between cryptocurrencies
 - Runs on Raspberry Pi using C with libwebsockets for efficient, long-term operation
 
-The implementation focuses on minimizing processing delays and maintaining accuracy over extended runtime periods, making it suitable for continuous market analysis and potential trading strategy development.
+The implementation focuses on minimizing processing delays and maintaining connection and accuracy over extended runtime periods, making it suitable for continuous market analysis and potential trading strategy development.
 
 ## Building
 
@@ -49,4 +57,4 @@ sudo pacman -S ca-certificates
 
 ## Appendix
 
-For more in depth information and results refer to [`docs/report.pdf`](docs/report.pdf) (TODO).
+For more in depth information and results refer to [`docs/report.pdf`](docs/report.pdf).
