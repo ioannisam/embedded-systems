@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdatomic.h>
+#include <stdbool.h>
 #include <jansson.h>
 #include <time.h>
 
@@ -17,6 +19,7 @@
 #define OKX_WS_HOST "ws.okx.com"
 #define OKX_WS_PORT 8443
 #define OKX_WS_PATH "/ws/v5/public"
+#define OKX_WS_ORIGIN "https://www.okx.com"
 
 struct TradeQueue;
 typedef struct TradeQueue TradeQueue;
@@ -44,3 +47,4 @@ typedef struct {
 extern TradeQueue trade_queue;
 extern SymbolHistory symbol_histories[SYMBOL_COUNT];
 extern const char* symbols[SYMBOL_COUNT];
+extern atomic_bool exit_requested;

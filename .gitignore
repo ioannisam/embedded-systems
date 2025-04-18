@@ -2,6 +2,5 @@
 build
 bin
 logs
-test/timing.png
-test/correlation.png
+test/assets
 TODO.txt

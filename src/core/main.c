@@ -4,18 +4,42 @@
 #include "data/logger.h"
 #include "system/scheduler.h"
 
+#include <signal.h>
+#include <string.h>
+
 const char* symbols[SYMBOL_COUNT] = {
     "BTC-USDT", "ADA-USDT", "ETH-USDT", "DOGE-USDT",
     "XRP-USDT", "SOL-USDT", "LTC-USDT", "BNB-USDT"
 };
 
+atomic_bool exit_requested = ATOMIC_VAR_INIT(false);
+static volatile sig_atomic_t signal_count = 0;
+
+void handle_signal(int sig) {
+    (void)sig;
+    if (++signal_count == 1) {
+        atomic_store(&exit_requested, true);
+        printf("\nGraceful shutdown initiated. Press Ctrl+C again to force exit.\n");
+        fflush(stdout);
+    } else {
+        printf("\nForcing exit.\n");
+        fflush(stdout);
+        _exit(EXIT_FAILURE);
+    }
+}
+
 int main() {
+
+    // Set up signal handlers
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handle_signal;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+
     struct lws_context* context = ws_init_context();
     if (!context) {
-        return EXIT_FAILURE;
-    }
-    if (!ws_connect(context)) {
-        lws_context_destroy(context);
         return EXIT_FAILURE;
     }
 

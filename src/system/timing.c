@@ -29,7 +29,8 @@ void timing_log(const struct timespec* start, const struct timespec* end) {
     if (f) {
         fprintf(f, "%lld.%03ld,%lld.%03ld,%lld.%03ld\n",
             (long long)start->tv_sec, (long)(start->tv_nsec / 1000000),
-            (long long)start->tv_sec, (long)(start->tv_nsec / 1000000),
+            (long long)start->tv_sec + ((end->tv_sec - start->tv_sec) / 2),
+            (long)(start->tv_nsec / 1000000),
             (long long)end->tv_sec, (long)(end->tv_nsec / 1000000));
         fclose(f);
     }

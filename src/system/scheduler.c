@@ -3,13 +3,13 @@
 #include "data/ma.h"
 #include "data/corr.h"
 
-void* scheduler_thread(void* arg) {
+void* scheduler_thread(void* arg __attribute__((unused))) {
 
     timing_init();
     CpuStats prev = {0}, curr = {0};
     read_cpu_stats(&prev);
     
-    while (1) {
+    while (!atomic_load(&exit_requested)) {
 
         // wait for next minute
         timing_wait_next(); 

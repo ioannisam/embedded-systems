@@ -11,7 +11,7 @@ void ma_process(time_t current_time) {
         // purge old trades
         size_t new_count = 0;
         for(size_t j=0; j<symbol_histories[i].count; j++) {
-            if(symbol_histories[i].trades[j].timestamp >= cutoff) {
+            if(symbol_histories[i].trades[j].timestamp >= (uint64_t)cutoff) {
                 symbol_histories[i].trades[new_count++] = symbol_histories[i].trades[j];
             }
         }
