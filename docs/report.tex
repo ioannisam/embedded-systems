@@ -13,13 +13,13 @@
 \maketitle
 
 \begin{abstract}
-This document describes the architecture, implementation details, performance characteristics and fault tolerance mechanisms of a real-time cryptocurrency analysis system. The system is designed for sustained operation on both desktop -for development purposes- and embedded platforms. We discuss moving average calculations, correlation analysis across multiple trading pairs and strategies to ensure reliability under network variability.
+This document describes the architecture, implementation details, performance characteristics and fault tolerance mechanisms of a real-time cryptocurrency analysis system. The system is designed for sustained operation on both desktop -for development purposes- and embedded platforms (Raspberry Pi Zero W). We discuss moving average calculations, correlation analysis across multiple trading pairs and strategies to ensure reliability under network variability.
 \end{abstract}
 
 \tableofcontents
 
 \section{Introduction}
-Cryptocurrency markets operate continuously, generating vast amounts of data every second. Accurate and timely analysis of trade streams can inform automated strategies, risk management and market research. Our system ingests live trade feeds from the OKX exchange, processes data in near real time and computes minute-by-minute metrics for eight major cryptocurrency pairs:
+Cryptocurrency markets operate continuously, generating vast amounts of data every second. Accurate and timely analysis of trade streams can inform automated strategies, risk management and market research. The system ingests live trade feeds from the OKX exchange, processes data in near real time and computes minute-by-minute metrics for eight major cryptocurrency pairs:
 
 \[
 \left\{
@@ -30,15 +30,15 @@ Cryptocurrency markets operate continuously, generating vast amounts of data eve
 \right\}
 \]
 
-Beyond raw data capture, the system supports statistical analyses such as moving averages and cross-pair correlations, while maintaining robust fault tolerance to network interruptions. This document presents the full design, implementation choices, performance evaluation and operational considerations that enable continuous monitoring.
+Beyond raw data capture, the system supports statistical analyses such as moving averages and cross-pair correlations, while maintaining robust fault tolerance to network interruptions. This document presents the design, implementation choices, performance evaluation and operational considerations that enable continuous monitoring.
 
 
 \section{System Architecture}
 At a high level, the system consists of three interacting layers:
 \begin{enumerate}
-  \item \textbf{Data Ingestion}: Receives live trade data via WebSockets, parses incoming JSON messages, and queues them for downstream processing.
+  \item \textbf{Data Ingestion}: Receives live trade data via WebSockets, parses incoming JSON messages and queues them for downstream processing.
   \item \textbf{Processing and Analysis}: Maintains in-memory buffers for calculating moving averages and correlation coefficients on fixed time windows.
-  \item \textbf{Fault Tolerance and Longevity}: Logs raw trades to disk, generates summary statistics, and exposes health metrics to alerting systems.
+  \item \textbf{Fault Tolerance and Longevity}: Logs raw trades to disk, generates summary statistics and exposes health metrics to alerting systems.
 \end{enumerate}
 
 \subsection{Data Ingestion}
@@ -58,9 +58,9 @@ Raw trades are appended to symbol-specific log files via \texttt{logger.c}, prov
 \subsection{Processing and Analysis}
 The core analytical tasks run on minute-resolution windows:
 
-\paragraph{Moving Average} For each trading pair, a 60-minute simple moving average (SMA) is computed. We use a circular buffer of size 128 to store recent price points, reducing memory churn and enabling O(1) updates: every new price pushes out the oldest and adjusts the running sum.
+\paragraph{Moving Average} For each trading pair, a \textit{15-minute} simple moving average (SMA) is computed. We use a circular buffer of \textit{size 8} to store recent price points, reducing memory churn and enabling O(1) updates: every new price pushes out the oldest and adjusts the running sum.
 
-\paragraph{Cross-Pair Correlation} To examine market coupling, we compute Pearson's correlation coefficient between the SMA sequences of all pairs. Given two sequences $\{x_i\}$ and $\{y_i\}$ of length $N$, we calculate:
+\paragraph{Cross-Pair Correlation} To examine market coupling, we compute Pearson's correlation coefficient between the SMA sequences of all pairs using \textit{8 consecutive data points} (8-minute windows). Given two sequences $\{x_i\}$ and $\{y_i\}$ of length $N$, we calculate:
 \[
 r = \frac{\sum_{i=1}^N (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_{i=1}^N (x_i - \bar{x})^2 \sum_{i=1}^N (y_i - \bar{y})^2}}.
 \]
@@ -69,7 +69,7 @@ This dual-pass calculation first purges outdated entries before updating statist
 \subsection{Fault Tolerance and Longevity}
 Continuous operation over hours or days demands resilience to network issues and system interrupts. Key features include:
 \begin{itemize}
-  \item \textbf{Exponential Backoff}: On WebSocket disconnects, reconnection attempts start at 30 seconds and double up to a 60-second cap (\texttt{websocket.c}).
+  \item \textbf{Exponential Backoff}: On WebSocket disconnects, reconnection attempts start at \textit{2 seconds} and double up to a \textit{60-second cap} (\texttt{websocket.c}).
   \item \textbf{Heartbeat Monitoring}: Regular ping/pong messages verify channel health. Missed pings trigger an immediate reconnect.
   \item \textbf{Thread Safety}: All symbol-specific data buffers are protected by mutexes when shared across threads.
   \item \textbf{Graceful Shutdown}: SIGINT and SIGTERM handlers flush in-memory buffers to disk, close open sockets and log a final status report (\texttt{main.c}).
@@ -101,14 +101,17 @@ To compile for the host environment, simply run:
 \begin{verbatim}
 $ make host
 \end{verbatim}
-This invokes GCC (version 12.2) with link-time optimizations, producing a dynamically linked binary. Required dependencies include \texttt{libwebsockets-dev}, \texttt{jansson-dev}, and OpenSSL libraries. The native build was used during the development phase of the project.
+This invokes GCC with link-time optimizations, producing a dynamically linked binary. Required dependencies include \texttt{libwebsockets-dev}, \texttt{jansson-dev}, and OpenSSL libraries. The native build was used during the development phase of the project.
 
 \subsection{Embedded Cross-Compilation}
 For Raspberry Pi targets (ARMv6, hard-float ABI), use:
 \begin{verbatim}
 $ make rpi
 \end{verbatim}
-Cross-compilation uses a prebuilt sysroot with static linking of all dependencies via \texttt{arm-linux-gnueabihf-gcc}. The resulting binary is optimized for low-level embedded deployment. The cross-compiled build was used for the final execution and analysis of the assignment. 
+Cross-compilation uses a prebuilt sysroot with static linking of all dependencies via \texttt{arm-none-linux-gnueabihf-gcc}. The cross-compiled build was used for the final execution and analysis of the assignment. 
+\begin{verbatim}
+$ make deploy
+\end{verbatim}
 
 \section{Results and Insights}
 
@@ -117,7 +120,7 @@ The strong positive correlations indicate that price movements across the select
 \begin{figure}[h]
   \centering
   \includegraphics[width=0.4\textwidth]{assets/correlation.png}
-  \caption{48-hour correlation matrix among major cryptocurrency pairs.}
+  \caption{48-hour, 8-minute window, correlation matrix}
 \end{figure}
 
 \subsection{Preliminary Market Predictions}
@@ -133,13 +136,14 @@ This work details a robust framework for continuous, real-time cryptocurrency tr
 \toprule
 Tool & Version & Purpose \\
 \midrule
-gcc           & 12.2  & compiler for native and cross builds \\
-make          & 4.3   & build automation for compiling and linking \\
-pthreads      & N/A   & concurrency and synchronization \\
-libwebsockets & 4.3.2 & market data ingestion \\
-OpenSSL       & 3.0   & secure communication layer \\
-jansson       & 2.14  & JSON parsing and serialization \\
-Python        & 3.11  & data visualization and offline analysis \\
+C             & C11     & core implementation language \\
+gcc           & 14.2.1  & compiler for native and cross builds \\
+make          & 4.4.1   & build automation for compiling and linking \\
+pthreads      & N/A     & concurrency and synchronization \\
+libwebsockets & 4.3.5   & market data ingestion \\
+OpenSSL       & 3.5.0   & secure communication layer \\
+jansson       & 2.14.1  & JSON parsing and serialization \\
+Python        & 3.13.2  & data visualization and offline analysis \\
 \bottomrule
 \end{tabularx}
 

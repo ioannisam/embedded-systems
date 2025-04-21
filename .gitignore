@@ -1,4 +1,6 @@
+rpi-sysroot
 .vscode
+.env
 build
 bin
 logs
