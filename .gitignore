@@ -4,5 +4,6 @@ rpi-sysroot
 build
 bin
 logs
+results
 test/assets
 TODO.txt
