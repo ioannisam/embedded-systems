@@ -11,6 +11,7 @@
 \begin{document}
 
 \maketitle
+\noindent\textbf{Project Repository:} \href{https://github.com/ioannisam/embedded-systems}{https://github.com/ioannisam/embedded-systems}
 
 \begin{abstract}
 This document describes the architecture, implementation details, performance characteristics and fault tolerance mechanisms of a real-time cryptocurrency analysis system. The system is designed for sustained operation on both desktop -for development purposes- and embedded platforms (Raspberry Pi Zero W). We discuss moving average calculations, correlation analysis across multiple trading pairs and strategies to ensure reliability under network variability.
@@ -32,6 +33,33 @@ Cryptocurrency markets operate continuously, generating vast amounts of data eve
 
 Beyond raw data capture, the system supports statistical analyses such as moving averages and cross-pair correlations, while maintaining robust fault tolerance to network interruptions. This document presents the design, implementation choices, performance evaluation and operational considerations that enable continuous monitoring.
 
+\section{Compilation and Deployment}
+
+\subsection{Native Host Build}
+To compile for the host environment, simply run:
+\begin{verbatim}
+$ make host
+\end{verbatim}
+This invokes GCC with link-time optimizations, producing a dynamically linked binary. The native build was used during the development phase of the project.
+
+\subsection{Embedded Cross-Compilation}
+For Raspberry Pi targets (ARMv6, hard-float ABI), use:
+\begin{verbatim}
+$ make rpi
+\end{verbatim}
+Cross-compilation uses a prebuilt sysroot with static linking of all dependencies via \texttt{arm-none-linux-gnueabihf-gcc}. The cross-compiled build was used for the final execution and analysis of the assignment. 
+\begin{verbatim}
+$ make deploy
+\end{verbatim}
+Then the binary is moved to the target system via \textit{scp}. We \textit{ssh} to the target and run the binary with nohup, so it outlives the session.
+\begin{verbatim}
+$ nohup ./rpi
+\end{verbatim}
+Finally the results are moved back to the host via \textit{scp} to undergo analysis and extract plots.
+
+\begin{verbatim}
+$ scp -r NAME@IP:/home/NAME/logs .
+\end{verbatim}
 
 \section{System Architecture}
 At a high level, the system consists of three interacting layers:
@@ -74,57 +102,41 @@ Continuous operation over hours or days demands resilience to network issues and
   \item \textbf{Thread Safety}: All symbol-specific data buffers are protected by mutexes when shared across threads.
   \item \textbf{Graceful Shutdown}: SIGINT and SIGTERM handlers flush in-memory buffers to disk, close open sockets and log a final status report (\texttt{main.c}).
 \end{itemize}
-These mechanisms ensure that transient errors do not result in permanent disconnections, data loss or unhandled exceptions. \newpage
+These mechanisms ensure that transient errors do not result in permanent disconnections, data loss or unhandled exceptions.
 
 \section{Performance Evaluation}
 
 \subsection{Scheduler Timing Accuracy}
 By measuring the actual execution time of analytical tasks against the ideal wall-clock schedule, we observe tight jitter control, suitable for minute-level aggregation.
-\begin{figure}[h]
+\begin{figure}[H]
   \centering
-  \includegraphics[width=0.4\textwidth]{assets/timing.png}
-  \caption{Task scheduling deviations, showing x\% of operations occur within $\pm\kappa$\,ms of minute boundaries.}
+  \includegraphics[width=1\textwidth]{assets/timing.png}
+  \caption{Task scheduling deviations, showing 95\% of operations occur within $\pm15$\,ms of minute boundaries.}
 \end{figure}
+
+The system maintains precise task scheduling with minimal deviation. As shown in \textit{Figure 1}, 95\% of analytical tasks execute within $\pm15$\ ms of their scheduled minute boundaries, with an average baseline delay of 6.7 ms. During network reconnection events (occurring $\sim30$ times daily), deviations spike to an average of 158.6 ms due to WebSocket reinitialization overhead.
 
 \subsection{Resource Utilization}
-With minimal memory footprint and efficient I/O, the system utilizes less than y\% of CPU resources, leaving ample headroom for additional features or parallel tasks.
-\begin{figure}[h]
+With minimal memory footprint and efficient I/O, the system utilizes less than 15\% of CPU resources, leaving ample headroom for additional features or parallel tasks.
+\begin{figure}[H]
   \centering
-  \includegraphics[width=0.4\textwidth]{assets/cpu_idle.png}
-  \caption{Average CPU idle percentage remains above y\%, indicating low processing overhead during steady-state operation.}
+  \includegraphics[width=1\textwidth]{assets/cpu_idle.png}
+  \caption{Average CPU idle percentage remains above 85\%, indicating low processing overhead during steady-state operation.}
 \end{figure}
 
-\section{Compilation and Deployment}
-
-\subsection{Native Host Build}
-To compile for the host environment, simply run:
-\begin{verbatim}
-$ make host
-\end{verbatim}
-This invokes GCC with link-time optimizations, producing a dynamically linked binary. Required dependencies include \texttt{libwebsockets-dev}, \texttt{jansson-dev}, and OpenSSL libraries. The native build was used during the development phase of the project.
-
-\subsection{Embedded Cross-Compilation}
-For Raspberry Pi targets (ARMv6, hard-float ABI), use:
-\begin{verbatim}
-$ make rpi
-\end{verbatim}
-Cross-compilation uses a prebuilt sysroot with static linking of all dependencies via \texttt{arm-none-linux-gnueabihf-gcc}. The cross-compiled build was used for the final execution and analysis of the assignment. 
-\begin{verbatim}
-$ make deploy
-\end{verbatim}
+\textit{Figure 2} reveals temporary utilization spikes to 45\% during reconnection events, reflecting cryptographic handshake computations during TLS renegotiations. \newpage
 
 \section{Results and Insights}
 
-\subsection{Correlation Findings}
-The strong positive correlations indicate that price movements across the selected assets are tightly linked on the observed timeframe, suggesting potential for statistical arbitrage strategies.
-\begin{figure}[h]
-  \centering
-  \includegraphics[width=0.4\textwidth]{assets/correlation.png}
-  \caption{48-hour, 8-minute window, correlation matrix}
-\end{figure}
+\subsection{Correlation Findings} The observed strong positive correlations across the selected assets suggest a high degree of co-movement over the analyzed timeframe, which may present opportunities for statistical arbitrage strategies.
 
-\subsection{Preliminary Market Predictions}
-Based on historical SMA trends and correlation dynamics, the system can generate short-term directional indicators. For example, a sustained divergence of BTC-USDT from its 60-minute SMA by more than z\% often precedes a mean-reversion within the next three minutes. These signals are provided for educational purposes and should not be construed as financial advice.
+\begin{figure}[h] \centering \includegraphics[width=1\textwidth]{assets/correlation.png} \caption{48-hour, 8-minute window, cryptocurrency correlation heatmap} \end{figure}
+
+Analysis of the 48-hour data revealed the following notable pairwise correlations: \begin{itemize} \item \textbf{ADA-USDT/XRP-USDT}: 0.67 Pearson coefficient \item \textbf{DOGE-USDT/XRP-USDT}: 0.66 Pearson coefficient \item \textbf{ETH-USDT/DOGE-USDT}: 0.66 Pearson coefficient \end{itemize}
+
+The overall average correlation across the asset pairs was 0.60 (Figure 3), indicating generally synchronized price behavior, particularly between altcoin pairs involving XRP and DOGE.
+
+\subsection{Preliminary Market Predictions} No divergence-based predictions were made in this analysis. However, the strong average correlations across the market suggest that mean-reversion and pair-trading strategies could be explored in future iterations of the model. Further research is required to validate these patterns across broader market conditions. The following should not be construed as financial advice.
 
 \section{Conclusion}
 This work details a robust framework for continuous, real-time cryptocurrency trade analysis. By combining efficient data pipelines, rigorous statistical computations and comprehensive fault tolerance, the system achieves reliable performance on both desktop and embedded platforms. Future enhancements include adaptive window sizing, integration of additional statistical models (e.g., Exponential SMA) and live dashboard visualization.

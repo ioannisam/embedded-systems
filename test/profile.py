@@ -7,7 +7,7 @@ import seaborn as sns
 from datetime import datetime
 
 def timing_deviation():
-    log_path = "results/timing.csv"
+    log_path = "logs/timing.csv"
     if not os.path.exists(log_path):
         print("Timing data not found!")
         return
@@ -90,7 +90,7 @@ def correlation_heatmap():
     counts = pd.DataFrame(0, index=symbols, columns=symbols, dtype=int)
 
     for i, symbol in enumerate(symbols):
-        log_path = f"results/corr/{symbol}.log"
+        log_path = f"logs/corr/{symbol}.log"
         if not os.path.exists(log_path):
             continue
             
@@ -159,7 +159,7 @@ def correlation_heatmap():
 
 def analyze_cpu_idle():
     df = pd.read_csv(
-        "results/cpu.log",
+        "logs/cpu.log",
         sep=r'\s+',
         header=None,
         names=["timestamp", "idle_pct"]
